@@ -1,141 +1,148 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 void main() {
-  runApp(const CalculatorApp());
+  runApp(MyApp());
 }
 
-class CalculatorApp extends StatelessWidget {
-  const CalculatorApp({super.key});
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CalculatorScreen(),
+      home: CalculatorPage(),
     );
   }
 }
 
-class CalculatorScreen extends StatefulWidget {
-  const CalculatorScreen({super.key});
-
+class CalculatorPage extends StatefulWidget {
   @override
-  State<CalculatorScreen> createState() => _CalculatorScreenState();
+  _CalculatorPageState createState() => _CalculatorPageState();
 }
 
-class _CalculatorScreenState extends State<CalculatorScreen> {
-  String display = "0";
+class _CalculatorPageState extends State<CalculatorPage> {
+  String input = "";
+  String result = "0";
   double num1 = 0;
-  double num2 = 0;
   String operator = "";
+  List<String> history = [];
 
-  void handleButton(String value) {
+  void onButtonClick(String value) {
     setState(() {
       if (value == "C") {
-        display = "0";
+        input = "";
+        result = "0";
         num1 = 0;
-        num2 = 0;
         operator = "";
+      } else if (value == "CE") {
+        input = "";
+      } else if (value == "⌫") {
+        if (input.isNotEmpty) {
+          input = input.substring(0, input.length - 1);
+        }
       } else if (value == "+" || value == "-" || value == "×" || value == "÷") {
-        num1 = double.parse(display);
+        num1 = double.parse(input);
         operator = value;
-        display = "0";
+        input = "";
       } else if (value == "=") {
-        num2 = double.parse(display);
+        double num2 = double.parse(input);
+        double res = 0;
 
-        if (operator == "+") {
-          display = (num1 + num2).toString();
-        } else if (operator == "-") {
-          display = (num1 - num2).toString();
-        } else if (operator == "×") {
-          display = (num1 * num2).toString();
-        } else if (operator == "÷") {
-          display = num2 != 0 ? (num1 / num2).toString() : "Error";
-        }
+        if (operator == "+") res = num1 + num2;
+        if (operator == "-") res = num1 - num2;
+        if (operator == "×") res = num1 * num2;
+        if (operator == "÷") res = num1 / num2;
+
+        result = res.toString();
+        history.add("$num1 $operator $num2 = $result");
+        input = result;
+      } else if (value == "x²") {
+        double n = double.parse(input);
+        result = (n * n).toString();
+        history.add("$input² = $result");
+        input = result;
+      } else if (value == "√") {
+        double n = double.parse(input);
+        result = sqrt(n).toString();
+        history.add("√$input = $result");
+        input = result;
       } else {
-        if (display == "0") {
-          display = value;
-        } else {
-          display += value;
-        }
+        input += value;
+        result = input;
       }
     });
   }
 
-  Widget buildButton(String text,
-      {Color color = Colors.grey, double flex = 1}) {
+  Widget buildButton(String text, {Color color = Colors.grey}) {
     return Expanded(
-      flex: flex.toInt(),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            padding: const EdgeInsets.all(20),
+      child: GestureDetector(
+        onTap: () => onButtonClick(text),
+        child: Container(
+          margin: EdgeInsets.all(4),
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(10),
           ),
-          onPressed: () => handleButton(text),
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 22),
+          child: Center(
+            child: Text(text, style: TextStyle(fontSize: 20)),
           ),
         ),
       ),
     );
   }
 
+  Widget buildRow(List<String> buttons) {
+    return Row(
+      children: buttons.map((b) => buildButton(b)).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("MSSV - Họ tên sinh viên"),
-        backgroundColor: Colors.black,
+        title: Text("2224802010755 - Truong"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.history),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: Text("Lịch sử"),
+                  content: Container(
+                    width: double.maxFinite,
+                    child: ListView(
+                      children: history.map((e) => Text(e)).toList(),
+                    ),
+                  ),
+                ),
+              );
+            },
+          )
+        ],
       ),
       body: Column(
         children: [
-          // Màn hình hiển thị
           Expanded(
             child: Container(
               alignment: Alignment.bottomRight,
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               child: Text(
-                display,
-                style: const TextStyle(
-                    fontSize: 50, color: Colors.white),
+                result,
+                style: TextStyle(fontSize: 40),
               ),
             ),
           ),
-
-          // Bàn phím
           Column(
             children: [
-              Row(children: [
-                buildButton("7"),
-                buildButton("8"),
-                buildButton("9"),
-                buildButton("÷", color: Colors.orange),
-              ]),
-              Row(children: [
-                buildButton("4"),
-                buildButton("5"),
-                buildButton("6"),
-                buildButton("×", color: Colors.orange),
-              ]),
-              Row(children: [
-                buildButton("1"),
-                buildButton("2"),
-                buildButton("3"),
-                buildButton("-", color: Colors.orange),
-              ]),
-              Row(children: [
-                buildButton("0"),
-                buildButton("."),
-                buildButton("C", color: Colors.red),
-                buildButton("+", color: Colors.orange),
-              ]),
-              Row(children: [
-                buildButton("=", color: Colors.blue, flex: 4),
-              ]),
+              buildRow(["C", "CE", "⌫", "÷"]),
+              buildRow(["7", "8", "9", "×"]),
+              buildRow(["4", "5", "6", "-"]),
+              buildRow(["1", "2", "3", "+"]),
+              buildRow(["0", ".", "=", "x²"]),
+              buildRow(["√"]),
             ],
           )
         ],
